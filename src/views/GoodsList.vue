@@ -15,7 +15,7 @@
       <div class="navbar">
         <div class="navbar-left-container">
           <a href="/">
-            <img class="navbar-brand-logo" src="static/logo.png"></a>
+            <img class="navbar-brand-logo" src="../../static/logo.png"></a>
         </div>
         <div class="navbar-right-container" style="display: flex;">
           <div class="navbar-menu-container">
@@ -47,12 +47,8 @@
       <div class="container">
         <div class="filter-nav">
           <span class="sortby">Sort by:</span>
-          <a href="javascript:void(0)" class="default cur">Default</a>
-          <a href="javascript:void(0)" class="price">Price
-            <svg class="icon icon-arrow-short">
-              <use xlink:href="#icon-arrow-short"></use>
-            </svg>
-          </a>
+          <a href="javascript:void(0)" :class="['default',cur?'cur':'']" @click="cur=true;sortGood(cur)">价格由低到高</a>
+          <a href="javascript:void(0)" :class="['price',cur?'':'cur']" @click="cur=false;sortGood(cur)">价格由高到低</a>
           <a href="javascript:void(0)" class="filterby stopPop">Filter by</a>
         </div>
         <div class="accessory-result">
@@ -60,18 +56,18 @@
           <div class="filter stopPop" id="filter">
             <dl class="filter-price">
               <dt>Price:</dt>
-              <dd><a href="javascript:void(0)">All</a></dd>
+              <dd><a href="javascript:void(0)" :class="pricecur==-1?'cur':''" @click="pricecur=-1;setPriceFilter(-1,-1)">All</a></dd>
               <dd>
-                <a href="javascript:void(0)">0 - 100</a>
+                <a href="javascript:void(0)" :class="pricecur==0?'cur':''" @click="pricecur=0;setPriceFilter(0,100)">0 - 100</a>
               </dd>
               <dd>
-                <a href="javascript:void(0)">100 - 500</a>
+                <a href="javascript:void(0)" :class="pricecur==1?'cur':''" @click="pricecur=1;setPriceFilter(100,500)">100 - 500</a>
               </dd>
               <dd>
-                <a href="javascript:void(0)">500 - 1000</a>
+                <a href="javascript:void(0)" :class="pricecur==2?'cur':''" @click="pricecur=2;setPriceFilter(500,1000)">500 - 1000</a>
               </dd>
               <dd>
-                <a href="javascript:void(0)">1000 - 2000</a>
+                <a href="javascript:void(0)" :class="pricecur==3?'cur':''" @click="pricecur=3;setPriceFilter(1000,2000)">1000 - 2000</a>
               </dd>
             </dl>
           </div>
@@ -85,14 +81,17 @@
                     <a href="#"><img :src="require('../../static/'+item.productImage)" alt=""></a>
                   </div>
                   <div class="main">
-                    <div class="name">XX</div>
-                    <div class="price">999</div>
+                    <div class="name">{{ item.productName }}</div>
+                    <div class="price">￥{{ item.salePrice }}</div>
                     <div class="btn-area">
-                      <a href="javascript:;" class="btn btn--m">加入购物车</a>
+                      <a href="javascript:;" class="btn btn--m" @click="addCart(item.productId)">加入购物车</a>
                     </div>
                   </div>
                 </li>
               </ul>
+              <div v-infinite-scroll="loadMore" infinite-scroll-disabled="busy" infinite-scroll-distance="20">
+                <img v-show="loading" :src="require('../assets/loading-spinning-bubbles.svg')" alt="">
+              </div>
             </div>
           </div>
         </div>
@@ -134,18 +133,67 @@ import axios from "@/api/axios";
 export default {
   data() {
     return {
-      goodsList: []
+      goodsList: [],
+      sortFlag: true,
+      page: 1,
+      pageSize: 8,
+      cur: true,
+      pricecur:-1,
+      busy: true,
+      priceGt:-1,
+      priceLte:-1,
+      loading:false,
     }
   },
   mounted() {
-    axios().get("/goods").then(res => {
-      let data = res;
-      if (res.status === "0") {
-        this.goodsList = data.result.list;
-      }else {
-        this.goodsList = []
+    this.getGoodsList();
+  },
+  methods: {
+    getGoodsList(flag) {
+      let param = {
+        page: this.page,
+        pageSize: this.pageSize,
+        sort: this.sortFlag ? 1 : -1,
+        priceGt:this.priceGt,
+        priceLte:this.priceLte
       }
-    })
+      this.loading = true;
+      axios().get("/goods", {params: param}).then(res => {
+        let data = res;
+        if (res.status === "0") {
+          flag?(this.goodsList = this.goodsList.concat(data.result.list),
+              res.result.count==0?this.busy=true:this.busy =false):(this.goodsList = data.result.list,
+              this.busy =false);
+          this.loading = false;
+        } else {
+          this.goodsList = []
+        }
+      })
+    },
+    sortGood(sort) {
+      this.sortFlag = sort;
+      this.page = 1;
+      this.getGoodsList()
+    },
+    setPriceFilter(indexGt,indexLte){
+      this.priceGt = indexGt;
+      this.priceLte = indexLte;
+      this.page = 1;
+      this.getGoodsList()
+    },
+    addCart(id){
+      axios().post("/goods/addCart", {productId:id}).then(res => {
+
+      })
+    },
+    loadMore: function () {
+      let that = this;
+      this.busy = true;
+      setTimeout(() => {
+        that.page++;
+        that.getGoodsList(true)
+      }, 500);
+    }
   }
 }
 </script>

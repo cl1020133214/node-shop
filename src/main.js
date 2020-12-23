@@ -7,7 +7,8 @@ import './assets/css/checkout.css'
 import './assets/css/login.css'
 import './assets/css/product.css'
 Vue.use(inter)
-
+import infiniteScroll from 'vue-infinite-scroll'
+Vue.use(infiniteScroll)
 Vue.config.productionTip = false
 
 new Vue({
