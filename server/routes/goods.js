@@ -4,7 +4,7 @@ var mongoose = require('mongoose');
 let Goods = require('../models/goods');
 
 //链接Mongodb数据库
-mongoose.connect('mongodb://127.0.0.1:27017/db_demo');
+mongoose.connect('mongodb://127.0.0.1:27017/demo');
 mongoose.connection.on("connected", function () {
     console.log("MongoDB connected success.")
 })
@@ -60,9 +60,8 @@ router.get('/', function (req, res, next) {
 });
 /* 加入到购物车 */
 router.post('/addCart', function (req, res, next) {
-    let userId = '100000077',productId = req.body.productId;//默认已经登录
+    let userId = '100000077', productId = req.body.productId;//默认已经登录
     let User = require('../models/user');
-
 
     let usersModel = User.findOne({
         userId: userId
@@ -75,37 +74,52 @@ router.post('/addCart', function (req, res, next) {
             })
         } else {
             console.log("userDoc:" + userDoc);
-            if(userDoc){
-                Goods.findOne({
-                    productId: productId
-                },function (err,doc){
-                    if (err) {
-                        res.json({
-                            status: "1",
-                            msg: err.message
-                        })
-                    }else{
-                        if(doc){
-                            doc.productNum = 1;
-                            doc.checked = 1;
-                            userDoc.cartList.push(doc);
-                            userDoc.save(function (err2,doc2){
-                                if (err2) {
-                                    res.json({
-                                        status: "1",
-                                        msg: err2.message
-                                    })
-                                }else{
-                                    res.json({
-                                        status: "0",
-                                        msg: "",
-                                        result: "success"
-                                    })
-                                }
-                            })
-                        }
+            if (userDoc) {
+                let goodsItem = '';
+                userDoc.cartList.forEach((item, index) => {
+                    if (item.productId == productId) {
+                        goodsItem = item;
+                        item.productNum++;
                     }
                 });
+                if (goodsItem) {
+                    save()
+                } else {
+                    Goods.findOne({
+                        productId: productId
+                    }, function (err, doc) {
+                        if (err) {
+                            res.json({
+                                status: "1",
+                                msg: err.message
+                            })
+                        } else {
+                            if (doc) {
+                                doc.productNum = 1;
+                                doc.checked = 1;
+                                userDoc.cartList.push(doc);
+                                save()
+                            }
+                        }
+                    });
+                }
+
+                function save() {
+                    userDoc.save(function (err2, doc2) {
+                        if (err2) {
+                            res.json({
+                                status: "1",
+                                msg: err2.message
+                            })
+                        } else {
+                            res.json({
+                                status: "0",
+                                msg: "",
+                                result: "success"
+                            })
+                        }
+                    })
+                }
             }
         }
     })

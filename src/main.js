@@ -6,11 +6,17 @@ import './assets/css/base.css'
 import './assets/css/checkout.css'
 import './assets/css/login.css'
 import './assets/css/product.css'
-Vue.use(inter)
 import infiniteScroll from 'vue-infinite-scroll'
-Vue.use(infiniteScroll)
+import ElementUI from 'element-ui';
+import 'element-ui/lib/theme-chalk/index.css';
+import { Dialog,Button,Input,Form,FormItem } from 'element-ui';
+Vue.use(infiniteScroll,inter,ElementUI)
+Vue.use(Dialog)
+Vue.use(Button)
+Vue.use(Input)
+Vue.use(Form)
+Vue.use(FormItem)
 Vue.config.productionTip = false
-
 new Vue({
   router,
   render: h => h(App)

@@ -2,6 +2,7 @@ let mongoose = require('mongoose');
 let Schema = mongoose.Schema;
 let userSchema = new Schema({
     "userId":String,
+    "nickName":String,
     "userName":String,
     "userPwd":String,
     "orderList":Array,
@@ -18,4 +19,4 @@ let userSchema = new Schema({
     "addressList":Array
 })
 
-module.exports = mongoose.model('User',userSchema)
+module.exports = mongoose.model('User',userSchema,'users')

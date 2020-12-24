@@ -21,7 +21,8 @@
           <div class="navbar-menu-container">
             <!--<a href="/" class="navbar-link">我的账户</a>-->
             <span class="navbar-link"></span>
-            <a href="javascript:void(0)" class="navbar-link">Login</a>
+            <a v-if="nickname===''" href="javascript:void(0)" class="navbar-link" @click="dialogFormVisible = true">Login</a>
+            <a v-else href="javascript:void(0)" class="navbar-link">{{ nickname }}</a>
             <a href="javascript:void(0)" class="navbar-link">Logout</a>
             <div class="navbar-cart-container">
               <span class="navbar-cart-count"></span>
@@ -35,6 +36,21 @@
         </div>
       </div>
     </header>
+    <el-dialog title="登录" :visible.sync="dialogFormVisible">
+      <el-form :model="ruleForm" status-icon :rules="rules" ref="ruleForm" label-width="50px" class="demo-ruleForm">
+        <el-form-item label="账号" prop="username">
+          <el-input prefix-icon="el-icon-user" type="text" v-model="ruleForm.username" autocomplete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="密码" prop="password">
+          <el-input prefix-icon="el-icon-lock" type="password" v-model="ruleForm.password"
+                    autocomplete="off"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="resetForm('ruleForm')">重置</el-button>
+        <el-button type="primary" @click="submitForm('ruleForm')">登录</el-button>
+      </div>
+    </el-dialog>
     <div class="nav-breadcrumb-wrap">
       <div class="container">
         <nav class="nav-breadcrumb">
@@ -56,18 +72,23 @@
           <div class="filter stopPop" id="filter">
             <dl class="filter-price">
               <dt>Price:</dt>
-              <dd><a href="javascript:void(0)" :class="pricecur==-1?'cur':''" @click="pricecur=-1;setPriceFilter(-1,-1)">All</a></dd>
+              <dd><a href="javascript:void(0)" :class="pricecur==-1?'cur':''"
+                     @click="pricecur=-1;setPriceFilter(-1,-1)">All</a></dd>
               <dd>
-                <a href="javascript:void(0)" :class="pricecur==0?'cur':''" @click="pricecur=0;setPriceFilter(0,100)">0 - 100</a>
+                <a href="javascript:void(0)" :class="pricecur==0?'cur':''" @click="pricecur=0;setPriceFilter(0,100)">0 -
+                  100</a>
               </dd>
               <dd>
-                <a href="javascript:void(0)" :class="pricecur==1?'cur':''" @click="pricecur=1;setPriceFilter(100,500)">100 - 500</a>
+                <a href="javascript:void(0)" :class="pricecur==1?'cur':''" @click="pricecur=1;setPriceFilter(100,500)">100
+                  - 500</a>
               </dd>
               <dd>
-                <a href="javascript:void(0)" :class="pricecur==2?'cur':''" @click="pricecur=2;setPriceFilter(500,1000)">500 - 1000</a>
+                <a href="javascript:void(0)" :class="pricecur==2?'cur':''" @click="pricecur=2;setPriceFilter(500,1000)">500
+                  - 1000</a>
               </dd>
               <dd>
-                <a href="javascript:void(0)" :class="pricecur==3?'cur':''" @click="pricecur=3;setPriceFilter(1000,2000)">1000 - 2000</a>
+                <a href="javascript:void(0)" :class="pricecur==3?'cur':''"
+                   @click="pricecur=3;setPriceFilter(1000,2000)">1000 - 2000</a>
               </dd>
             </dl>
           </div>
@@ -125,6 +146,7 @@
         </div>
       </div>
     </footer>
+
   </div>
 </template>
 <script>
@@ -132,38 +154,87 @@ import axios from "@/api/axios";
 
 export default {
   data() {
+    var validateusername = (rule, value, callback) => {
+      if (value === '') {
+        callback(new Error('请输入账号'));
+      } else {
+        callback();
+      }
+    };
+    var validatepassword = (rule, value, callback) => {
+      if (value === '') {
+        callback(new Error('请输入密码'));
+      } else {
+        callback();
+      }
+    };
     return {
+      dialogFormVisible: false,
+      ruleForm: {
+        username: '',
+        password: ''
+      },
+      rules: {
+        username: [
+          {validator: validateusername, trigger: 'blur'}
+        ],
+        password: [
+          {validator: validatepassword, trigger: 'blur'}
+        ]
+      },
+      nickname: "",
       goodsList: [],
       sortFlag: true,
       page: 1,
       pageSize: 8,
       cur: true,
-      pricecur:-1,
+      pricecur: -1,
       busy: true,
-      priceGt:-1,
-      priceLte:-1,
-      loading:false,
+      priceGt: -1,
+      priceLte: -1,
+      loading: false,
     }
   },
   mounted() {
     this.getGoodsList();
   },
   methods: {
+    submitForm(formName) {
+      this.$refs[formName].validate((valid) => {
+        if (valid) {
+          axios().post("/users/login", {
+            userName: this.ruleForm.username,
+            userPwd: this.ruleForm.password,
+          }).then(res => {
+            if (res.status == 0) {
+              this.dialogFormVisible = false;
+              this.nickname = res.result.nickName;
+            }
+          })
+        } else {
+          console.log('error submit!!');
+          return false;
+        }
+      });
+    },
+    resetForm(formName) {
+      this.$refs[formName].resetFields();
+    },
     getGoodsList(flag) {
       let param = {
         page: this.page,
         pageSize: this.pageSize,
         sort: this.sortFlag ? 1 : -1,
-        priceGt:this.priceGt,
-        priceLte:this.priceLte
+        priceGt: this.priceGt,
+        priceLte: this.priceLte
       }
       this.loading = true;
       axios().get("/goods", {params: param}).then(res => {
         let data = res;
         if (res.status === "0") {
-          flag?(this.goodsList = this.goodsList.concat(data.result.list),
-              res.result.count==0?this.busy=true:this.busy =false):(this.goodsList = data.result.list,
-              this.busy =false);
+          flag ? (this.goodsList = this.goodsList.concat(data.result.list),
+              res.result.count == 0 ? this.busy = true : this.busy = false) : (this.goodsList = data.result.list,
+              this.busy = false);
           this.loading = false;
         } else {
           this.goodsList = []
@@ -175,15 +246,19 @@ export default {
       this.page = 1;
       this.getGoodsList()
     },
-    setPriceFilter(indexGt,indexLte){
+    setPriceFilter(indexGt, indexLte) {
       this.priceGt = indexGt;
       this.priceLte = indexLte;
       this.page = 1;
       this.getGoodsList()
     },
-    addCart(id){
-      axios().post("/goods/addCart", {productId:id}).then(res => {
-
+    addCart(id) {
+      axios().post("/goods/addCart", {productId: id}).then(res => {
+        if (res.status == 0) {
+          alert('加入购物车成功')
+        } else {
+          alert('请求网络失败，' + res.msg)
+        }
       })
     },
     loadMore: function () {
