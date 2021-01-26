@@ -22,8 +22,8 @@
             <!--<a href="/" class="navbar-link">我的账户</a>-->
             <span class="navbar-link"></span>
             <a v-if="nickname===''" href="javascript:void(0)" class="navbar-link" @click="dialogFormVisible = true">Login</a>
-            <a v-else href="javascript:void(0)" class="navbar-link">{{ nickname }}</a>
-            <a href="javascript:void(0)" class="navbar-link">Logout</a>
+            <a v-if="nickname!==''" href="javascript:void(0)" class="navbar-link">{{ nickname }}</a>
+            <el-button type="text" v-if="nickname!==''" class="navbar-link" @click="loginout">Logout</el-button>
             <div class="navbar-cart-container">
               <span class="navbar-cart-count"></span>
               <a class="navbar-link navbar-cart-link" href="/#/cart">
@@ -199,6 +199,27 @@ export default {
     this.getGoodsList();
   },
   methods: {
+    loginout() {
+      this.$confirm('确定登出', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        axios().post("/users/loginout").then(res => {
+          if (res.data.status == '0') {
+            this.$message({
+              type: 'success',
+              message: '已登出!'
+            });
+          }
+        })
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '取消操作'
+        });
+      });
+    },
     submitForm(formName) {
       this.$refs[formName].validate((valid) => {
         if (valid) {
@@ -209,6 +230,7 @@ export default {
             if (res.status == 0) {
               this.dialogFormVisible = false;
               this.nickname = res.result.nickName;
+              console.log(this.nickname)
             }
           })
         } else {
